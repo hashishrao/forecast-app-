@@ -12,6 +12,7 @@ import PollutionSourceMap from "@/components/pollution-source-map";
 import { getAqiForecastAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import VoiceAssistant, { type VoiceAssistantHandle } from "@/components/voice-assistant";
+import WorldAqiView from "@/components/world-aqi-view";
 
 type MapData = {
   center: { lat: number; lng: number };
@@ -110,6 +111,7 @@ export default function Home() {
               </CardContent>
             </Card>
             <ChatAssistant />
+            <WorldAqiView />
             <Card>
               <CardHeader>
                 <CardTitle>Pollution Source Heatmap</CardTitle>
