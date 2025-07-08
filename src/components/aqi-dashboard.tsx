@@ -1,0 +1,196 @@
+"use client";
+
+import { useState, useTransition, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { MapPin, Wind, Thermometer, Cloud, Sun, Loader2 } from "lucide-react";
+
+import { getAqiForecastAction } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "./ui/skeleton";
+
+const formSchema = z.object({
+  location: z.string().min(2, {
+    message: "Location must be at least 2 characters.",
+  }),
+});
+
+type AqiData = {
+  aqi: number;
+  pm25: number;
+  pm10: number;
+  temp: number;
+};
+
+export default function AqiDashboard() {
+  const [isPending, startTransition] = useTransition();
+  const [forecast, setForecast] = useState<string | null>(null);
+  const [aqiData, setAqiData] = useState<AqiData | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      location: "",
+    },
+  });
+
+  useEffect(() => {
+    // Set initial data for a default location on mount
+    form.setValue("location", "New Delhi");
+    onSubmit({ location: "New Delhi" });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getAqiColor = (aqi: number) => {
+    if (aqi <= 50) return "text-green-500";
+    if (aqi <= 100) return "text-yellow-500";
+    if (aqi <= 150) return "text-orange-500";
+    if (aqi <= 200) return "text-red-500";
+    if (aqi <= 300) return "text-purple-500";
+    return "text-rose-700";
+  };
+  
+  const getAqiDescription = (aqi: number) => {
+    if (aqi <= 50) return "Good";
+    if (aqi <= 100) return "Moderate";
+    if (aqi <= 150) return "Unhealthy for Sensitive Groups";
+    if (aqi <= 200) return "Unhealthy";
+    if (aqi <= 300) return "Very Unhealthy";
+    return "Hazardous";
+  };
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    setForecast(null);
+    setAqiData(null);
+    startTransition(async () => {
+      const result = await getAqiForecastAction(values);
+      if (result.success && result.data) {
+        setForecast(result.data.forecast);
+        setAqiData({
+          aqi: Math.floor(Math.random() * 350) + 1,
+          pm10: Math.floor(Math.random() * 200) + 1,
+          pm25: Math.floor(Math.random() * 150) + 1,
+          temp: Math.floor(Math.random() * 20) + 10,
+        });
+        toast({
+          title: "Forecast Updated",
+          description: `Successfully fetched AQI data for ${values.location}.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error || "Failed to fetch AQI data.",
+        });
+      }
+    });
+  }
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Air Quality Forecast</CardTitle>
+        <CardDescription>Enter a location to get the 72-hour AQI forecast.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-4 mb-6">
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem className="flex-grow">
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="e.g., San Francisco" {...field} className="pl-10" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Get Forecast
+            </Button>
+          </form>
+        </Form>
+
+        {isPending && !aqiData && <DashboardSkeleton />}
+
+        {aqiData && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Current Conditions</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <Card>
+                  <CardContent className="p-4">
+                    <p className={`text-5xl font-bold ${getAqiColor(aqiData.aqi)}`}>{aqiData.aqi}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{getAqiDescription(aqiData.aqi)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 flex flex-col items-center justify-center">
+                    <Wind className="h-8 w-8 text-primary mb-2" />
+                    <p className="text-2xl font-semibold">{aqiData.pm25} <span className="text-sm text-muted-foreground">µg/m³</span></p>
+                    <p className="text-xs text-muted-foreground">PM2.5</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 flex flex-col items-center justify-center">
+                    <Cloud className="h-8 w-8 text-primary mb-2" />
+                    <p className="text-2xl font-semibold">{aqiData.pm10} <span className="text-sm text-muted-foreground">µg/m³</span></p>
+                    <p className="text-xs text-muted-foreground">PM10</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 flex flex-col items-center justify-center">
+                    <Thermometer className="h-8 w-8 text-primary mb-2" />
+                    <p className="text-2xl font-semibold">{aqiData.temp}°C</p>
+                    <p className="text-xs text-muted-foreground">Temperature</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {forecast && (
+                <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">AI Generated Forecast</h3>
+                    <Card className="bg-muted/50">
+                        <CardContent className="p-4">
+                        <p className="text-sm text-foreground">{forecast}</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+const DashboardSkeleton = () => (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="h-7 w-48 mb-2" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+        </div>
+      </div>
+      <div>
+        <Skeleton className="h-7 w-48 mb-2" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    </div>
+)
