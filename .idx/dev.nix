@@ -5,7 +5,9 @@
   channel = "stable-24.11"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
   packages = [
+    pkgs.python310
     pkgs.nodejs_20
+    pkgs.python310Packages.pandas
     pkgs.zulu
   ];
   # Sets environment variables in the workspace

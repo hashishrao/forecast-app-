@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Image from "next/image"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 
 const trendsData = {
   daily: {
@@ -50,6 +52,32 @@ const trendsData = {
   }
 };
 
+const satelliteImages = {
+  daily: [
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Monday", label: "Monday", dataAiHint: "satellite pollution" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Tuesday", label: "Tuesday", dataAiHint: "satellite haze" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Wednesday", label: "Wednesday", dataAiHint: "satellite smog" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Thursday", label: "Thursday", dataAiHint: "satellite clear" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Friday", label: "Friday", dataAiHint: "satellite pollution" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Saturday", label: "Saturday", dataAiHint: "satellite city" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Sunday", label: "Sunday", dataAiHint: "satellite city" },
+  ],
+  weekly: [
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Week 1", label: "Week 1", dataAiHint: "satellite city" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Week 2", label: "Week 2", dataAiHint: "satellite haze" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Week 3", label: "Week 3", dataAiHint: "satellite pollution" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Week 4", label: "Week 4", dataAiHint: "satellite clear" },
+  ],
+  monthly: [
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Jan", label: "January", dataAiHint: "satellite winter" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Feb", label: "February", dataAiHint: "satellite winter" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Mar", label: "March", dataAiHint: "satellite spring" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Apr", label: "April", dataAiHint: "satellite spring" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view May", label: "May", dataAiHint: "satellite summer" },
+    { src: "https://placehold.co/600x400.png", alt: "Satellite view Jun", label: "June", dataAiHint: "satellite summer" },
+  ]
+};
+
 const chartConfig = {
   value: {
     label: "µg/m³",
@@ -78,6 +106,10 @@ export default function HistoricalTrends() {
   const chartData = useMemo(() => {
     return trendsData[timePeriod][activeTab] || [];
   }, [activeTab, timePeriod]);
+
+  const currentImages = useMemo(() => {
+    return satelliteImages[timePeriod] || [];
+  }, [timePeriod]);
   
   const descriptionMap: Record<TimePeriod, string> = {
     daily: "Pollutant levels over the last 7 days.",
@@ -126,6 +158,40 @@ export default function HistoricalTrends() {
             <Bar dataKey="value" fill={chartConfig[activeTab].color} radius={4} />
           </BarChart>
         </ChartContainer>
+
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-foreground mb-2">Visual Correlation</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Satellite imagery corresponding to the selected time period.
+          </p>
+          <Carousel className="w-full" opts={{ loop: true }}>
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {currentImages.map((image, index) => (
+                <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1">
+                    <Card className="overflow-hidden">
+                      <CardContent className="flex aspect-video items-center justify-center p-0">
+                        <Image
+                          src={image.src}
+                          alt={image.alt}
+                          width={600}
+                          height={400}
+                          className="w-full h-full object-cover"
+                          data-ai-hint={image.dataAiHint}
+                        />
+                      </CardContent>
+                      <div className="p-3 bg-muted/50">
+                        <p className="text-sm font-medium text-center text-foreground">{image.label}</p>
+                      </div>
+                    </Card>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden sm:flex" />
+            <CarouselNext className="hidden sm:flex" />
+          </Carousel>
+        </div>
       </CardContent>
     </Card>
   )
