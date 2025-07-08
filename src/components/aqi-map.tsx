@@ -21,11 +21,11 @@ const getAqiColorClass = (aqi: number | null) => {
 export default function AqiMap({ center, zoom, aqi }: AqiMapProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  if (!apiKey) {
+  if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
     return (
       <div className="flex items-center justify-center h-full bg-muted">
         <p className="text-muted-foreground text-center p-4">
-          Google Maps API key is missing. Please add it to your .env file.
+          Google Maps API key is missing. Please create one and add it to your .env file as NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
         </p>
       </div>
     );
