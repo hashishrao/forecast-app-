@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { MapPin, Wind, Thermometer, Cloud, Loader2 } from "lucide-react";
+import { MapPin, Thermometer, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "./ui/skeleton";
 import type { ForecastAqiOutput } from "@/ai/flows/forecast-aqi";
+import BulletGraph from "./bullet-graph";
 
 const formSchema = z.object({
   location: z.string().min(2, {
@@ -26,6 +27,34 @@ type AqiDashboardProps = {
   aqiData: ForecastAqiOutput['current'] | null;
   initialLocation: string;
 };
+
+// Define ranges for bullet graphs
+const pm25Ranges = [
+  { label: "Good", value: 12, color: "bg-green-500" },
+  { label: "Moderate", value: 35.4, color: "bg-yellow-500" },
+  { label: "Unhealthy for Sensitive", value: 55.4, color: "bg-orange-500" },
+  { label: "Unhealthy", value: 150.4, color: "bg-red-500" },
+  { label: "Very Unhealthy", value: 250.4, color: "bg-purple-500" },
+  { label: "Hazardous", value: 350.4, color: "bg-rose-700" },
+];
+
+const pm10Ranges = [
+  { label: "Good", value: 54, color: "bg-green-500" },
+  { label: "Moderate", value: 154, color: "bg-yellow-500" },
+  { label: "Unhealthy for Sensitive", value: 254, color: "bg-orange-500" },
+  { label: "Unhealthy", value: 354, color: "bg-red-500" },
+  { label: "Very Unhealthy", value: 424, color: "bg-purple-500" },
+  { label: "Hazardous", value: 504, color: "bg-rose-700" },
+];
+
+const no2Ranges = [
+    { label: "Good", value: 40, color: "bg-green-500" },
+    { label: "Moderate", value: 80, color: "bg-yellow-500" },
+    { label: "Unhealthy for Sensitive", value: 180, color: "bg-orange-500" },
+    { label: "Unhealthy", value: 280, color: "bg-red-500" },
+    { label: "Very Unhealthy", value: 400, color: "bg-purple-500" },
+    { label: "Hazardous", value: 500, color: "bg-rose-700" },
+];
 
 export default function AqiDashboard({ onSearch, isPending, forecast, aqiData, initialLocation }: AqiDashboardProps) {
 
@@ -103,33 +132,25 @@ export default function AqiDashboard({ onSearch, isPending, forecast, aqiData, i
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Current Conditions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <Card>
-                  <CardContent className="p-4">
-                    <p className={`text-5xl font-bold ${getAqiColor(aqiData.aqi)}`}>{aqiData.aqi}</p>
-                    <p className="text-sm font-medium text-muted-foreground">{getAqiDescription(aqiData.aqi)}</p>
-                  </CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                <Card className="sm:col-span-2">
+                    <CardContent className="p-4 flex flex-col items-center justify-center">
+                        <p className="text-sm font-medium text-muted-foreground">AQI</p>
+                        <p className={`text-7xl font-bold ${getAqiColor(aqiData.aqi)}`}>{aqiData.aqi}</p>
+                        <p className="font-medium">{getAqiDescription(aqiData.aqi)}</p>
+                    </CardContent>
                 </Card>
+                <BulletGraph title="PM2.5" value={aqiData.pm25} unit="µg/m³" ranges={pm25Ranges} max={350} />
+                <BulletGraph title="PM10" value={aqiData.pm10} unit="µg/m³" ranges={pm10Ranges} max={500} />
+                <BulletGraph title="NO₂" value={aqiData.no2} unit="µg/m³" ranges={no2Ranges} max={500} />
                 <Card>
-                  <CardContent className="p-4 flex flex-col items-center justify-center">
-                    <Wind className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-2xl font-semibold">{aqiData.pm25} <span className="text-sm text-muted-foreground">µg/m³</span></p>
-                    <p className="text-xs text-muted-foreground">PM2.5</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex flex-col items-center justify-center">
-                    <Cloud className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-2xl font-semibold">{aqiData.pm10} <span className="text-sm text-muted-foreground">µg/m³</span></p>
-                    <p className="text-xs text-muted-foreground">PM10</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex flex-col items-center justify-center">
-                    <Thermometer className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-2xl font-semibold">{aqiData.temp}°C</p>
-                    <p className="text-xs text-muted-foreground">Temperature</p>
-                  </CardContent>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Temperature</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 flex items-center justify-center gap-4">
+                        <Thermometer className="h-10 w-10 text-primary" />
+                        <p className="text-4xl font-semibold">{aqiData.temp}°C</p>
+                    </CardContent>
                 </Card>
               </div>
             </div>
@@ -155,7 +176,8 @@ const DashboardSkeleton = () => (
     <div className="space-y-6">
       <div>
         <Skeleton className="h-7 w-48 mb-2" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Skeleton className="h-36 w-full sm:col-span-2" />
             <Skeleton className="h-28 w-full" />
             <Skeleton className="h-28 w-full" />
             <Skeleton className="h-28 w-full" />

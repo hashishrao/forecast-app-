@@ -26,6 +26,7 @@ const ForecastAqiOutputSchema = z.object({
       aqi: z.number().describe('The current overall AQI value.'),
       pm25: z.number().describe('The current PM2.5 concentration in µg/m³.'),
       pm10: z.number().describe('The current PM10 concentration in µg/m³.'),
+      no2: z.number().describe('The current NO2 concentration in µg/m³.'),
       temp: z.number().describe('The current temperature in Celsius.'),
     }).describe('Current air quality conditions.'),
   lat: z.number().describe('The latitude of the location.'),
@@ -47,7 +48,7 @@ Location: {{{location}}}
 
 Based on the location, provide:
 1.  A detailed 72-hour AQI forecast text.
-2.  The current AQI conditions (a realistic overall AQI value, PM2.5, PM10, and temperature in Celsius).
+2.  The current AQI conditions (a realistic overall AQI value, PM2.5, PM10, NO2, and temperature in Celsius).
 3.  The approximate latitude and longitude for the center of the provided location.
 
 Return the data in the specified JSON format. Be realistic with the data.`,

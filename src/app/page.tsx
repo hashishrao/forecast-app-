@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import AqiDashboard from "@/components/aqi-dashboard";
-import HealthRecommendations from "@/components/health-recommendations";
+import ChatAssistant from "@/components/chat-assistant";
 import HistoricalTrends from "@/components/historical-trends";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +109,7 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
+            <ChatAssistant />
             <Card>
               <CardHeader>
                 <CardTitle>Pollution Source Heatmap</CardTitle>
@@ -119,7 +120,6 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-            <HealthRecommendations />
           </div>
 
         </div>
