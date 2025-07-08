@@ -8,6 +8,7 @@ import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ForecastAqiOutput } from "@/ai/flows/forecast-aqi";
 import AqiMap from "@/components/aqi-map";
+import PollutionSourceMap from "@/components/pollution-source-map";
 
 type MapData = {
   center: { lat: number; lng: number };
@@ -46,6 +47,16 @@ export default function Home() {
               <CardContent>
                 <div className="aspect-video bg-muted rounded-lg overflow-hidden border">
                   <AqiMap center={mapData.center} zoom={10} aqi={mapData.aqi} />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Pollution Source Heatmap</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="aspect-video bg-muted rounded-lg overflow-hidden border">
+                  <PollutionSourceMap center={mapData.center} zoom={10} />
                 </div>
               </CardContent>
             </Card>
