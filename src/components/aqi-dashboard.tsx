@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { MapPin, Wind, Thermometer, Cloud, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,12 +36,11 @@ export default function AqiDashboard({ onSearch, isPending, forecast, aqiData, i
     },
   });
 
-  // Keep form value in sync with the current location from parent
-  form.watch((value) => {
-    if (value.location !== initialLocation) {
-        form.setValue('location', initialLocation);
-    }
-  });
+  // Sync the form's location value with the parent component's state.
+  // This is useful for updates from outside the form, like voice commands.
+  useEffect(() => {
+    form.setValue('location', initialLocation);
+  }, [initialLocation, form.setValue]);
 
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
