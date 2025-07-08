@@ -1,17 +1,14 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { MapPin, Wind, Thermometer, Cloud, Loader2 } from "lucide-react";
 
-import { getAqiForecastAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "./ui/skeleton";
 import type { ForecastAqiOutput } from "@/ai/flows/forecast-aqi";
 
@@ -22,45 +19,33 @@ const formSchema = z.object({
 });
 
 type AqiDashboardProps = {
-  onForecastUpdate: (data: ForecastAqiOutput) => void;
+  onSearch: (location: string) => void;
+  isPending: boolean;
+  forecast: string | null;
+  aqiData: ForecastAqiOutput['current'] | null;
+  initialLocation: string;
 };
 
-export default function AqiDashboard({ onForecastUpdate }: AqiDashboardProps) {
-  const [isPending, startTransition] = useTransition();
-  const [forecast, setForecast] = useState<string | null>(null);
-  const [aqiData, setAqiData] = useState<ForecastAqiOutput['current'] | null>(null);
-  const { toast } = useToast();
+export default function AqiDashboard({ onSearch, isPending, forecast, aqiData, initialLocation }: AqiDashboardProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      location: "",
+      location: initialLocation || "",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    setForecast(null);
-    setAqiData(null);
-    startTransition(async () => {
-      const result = await getAqiForecastAction(values);
-      if (result.success && result.data) {
-        setForecast(result.data.forecast);
-        setAqiData(result.data.current);
-        onForecastUpdate(result.data);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error || "Failed to fetch AQI data.",
-        });
-      }
-    });
-  }
+  // Keep form value in sync with the current location from parent
+  form.watch((value) => {
+    if (value.location !== initialLocation) {
+        form.setValue('location', initialLocation);
+    }
+  });
 
-  useEffect(() => {
-    form.setValue("location", "New Delhi");
-    onSubmit({ location: "New Delhi" });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    onSearch(values.location);
+  }
 
   const getAqiColor = (aqi: number) => {
     if (aqi <= 50) return "text-green-500";
