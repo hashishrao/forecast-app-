@@ -21,7 +21,15 @@ export type ForecastAqiInput = z.infer<typeof ForecastAqiInputSchema>;
 const ForecastAqiOutputSchema = z.object({
   forecast: z
     .string()
-    .describe('The AQI forecast for the next 72 hours, including a timestamp for each data point.'),
+    .describe('A detailed 72-hour AQI forecast text.'),
+  current: z.object({
+      aqi: z.number().describe('The current overall AQI value.'),
+      pm25: z.number().describe('The current PM2.5 concentration in µg/m³.'),
+      pm10: z.number().describe('The current PM10 concentration in µg/m³.'),
+      temp: z.number().describe('The current temperature in Celsius.'),
+    }).describe('Current air quality conditions.'),
+  lat: z.number().describe('The latitude of the location.'),
+  lon: z.number().describe('The longitude of the location.'),
 });
 export type ForecastAqiOutput = z.infer<typeof ForecastAqiOutputSchema>;
 
@@ -29,33 +37,20 @@ export async function forecastAqi(input: ForecastAqiInput): Promise<ForecastAqiO
   return forecastAqiFlow(input);
 }
 
-const getAqiForecast = ai.defineTool(
-    {
-        name: 'getAqiForecast',
-        description: 'Retrieves the AQI forecast for a given location for the next 72 hours.',
-        inputSchema: z.object({
-            location: z.string().describe('The location to get the AQI forecast for.'),
-        }),
-        outputSchema: z.string(),
-    },
-    async (input) => {
-        // TODO: Implement fetching the AQI forecast using an external API or model.
-        // This is a placeholder implementation.
-        return `AQI forecast for ${input.location} for the next 72 hours will be good.`;
-    }
-);
-
 const prompt = ai.definePrompt({
   name: 'forecastAqiPrompt',
-  tools: [getAqiForecast],
   input: {schema: ForecastAqiInputSchema},
   output: {schema: ForecastAqiOutputSchema},
-  prompt: `You are an air quality expert.  A user has requested an AQI forecast for the next 72 hours.  Use the getAqiForecast tool to retrieve the AQI forecast for the user's location.
+  prompt: `You are an air quality expert with access to global air quality data, similar to what's provided by CPCB and other international bodies. A user has requested an AQI forecast.
 
 Location: {{{location}}}
 
-Return the forecast to the user.
-`,
+Based on the location, provide:
+1.  A detailed 72-hour AQI forecast text.
+2.  The current AQI conditions (a realistic overall AQI value, PM2.5, PM10, and temperature in Celsius).
+3.  The approximate latitude and longitude for the center of the provided location.
+
+Return the data in the specified JSON format. Be realistic with the data.`,
 });
 
 const forecastAqiFlow = ai.defineFlow(

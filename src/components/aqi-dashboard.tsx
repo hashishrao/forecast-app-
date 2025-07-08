@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { MapPin, Wind, Thermometer, Cloud, Sun, Loader2 } from "lucide-react";
+import { MapPin, Wind, Thermometer, Cloud, Loader2 } from "lucide-react";
 
 import { getAqiForecastAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "./ui/skeleton";
+import type { ForecastAqiOutput } from "@/ai/flows/forecast-aqi";
 
 const formSchema = z.object({
   location: z.string().min(2, {
@@ -20,17 +21,14 @@ const formSchema = z.object({
   }),
 });
 
-type AqiData = {
-  aqi: number;
-  pm25: number;
-  pm10: number;
-  temp: number;
+type AqiDashboardProps = {
+  onForecastUpdate: (data: ForecastAqiOutput) => void;
 };
 
-export default function AqiDashboard() {
+export default function AqiDashboard({ onForecastUpdate }: AqiDashboardProps) {
   const [isPending, startTransition] = useTransition();
   const [forecast, setForecast] = useState<string | null>(null);
-  const [aqiData, setAqiData] = useState<AqiData | null>(null);
+  const [aqiData, setAqiData] = useState<ForecastAqiOutput['current'] | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -40,8 +38,26 @@ export default function AqiDashboard() {
     },
   });
 
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setForecast(null);
+    setAqiData(null);
+    startTransition(async () => {
+      const result = await getAqiForecastAction(values);
+      if (result.success && result.data) {
+        setForecast(result.data.forecast);
+        setAqiData(result.data.current);
+        onForecastUpdate(result.data);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error || "Failed to fetch AQI data.",
+        });
+      }
+    });
+  }
+
   useEffect(() => {
-    // Set initial data for a default location on mount
     form.setValue("location", "New Delhi");
     onSubmit({ location: "New Delhi" });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,33 +79,6 @@ export default function AqiDashboard() {
     if (aqi <= 300) return "Very Unhealthy";
     return "Hazardous";
   };
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    setForecast(null);
-    setAqiData(null);
-    startTransition(async () => {
-      const result = await getAqiForecastAction(values);
-      if (result.success && result.data) {
-        setForecast(result.data.forecast);
-        setAqiData({
-          aqi: Math.floor(Math.random() * 350) + 1,
-          pm10: Math.floor(Math.random() * 200) + 1,
-          pm25: Math.floor(Math.random() * 150) + 1,
-          temp: Math.floor(Math.random() * 20) + 10,
-        });
-        toast({
-          title: "Forecast Updated",
-          description: `Successfully fetched AQI data for ${values.location}.`,
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error || "Failed to fetch AQI data.",
-        });
-      }
-    });
-  }
 
   return (
     <Card className="w-full">

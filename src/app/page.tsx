@@ -1,11 +1,32 @@
+"use client";
+
+import { useState } from "react";
 import AqiDashboard from "@/components/aqi-dashboard";
 import HealthRecommendations from "@/components/health-recommendations";
 import HistoricalTrends from "@/components/historical-trends";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Image from "next/image";
+import type { ForecastAqiOutput } from "@/ai/flows/forecast-aqi";
+import AqiMap from "@/components/aqi-map";
+
+type MapData = {
+  center: { lat: number; lng: number };
+  aqi: number | null;
+}
 
 export default function Home() {
+  const [mapData, setMapData] = useState<MapData>({
+    center: { lat: 28.6139, lng: 77.2090 }, // Default to New Delhi
+    aqi: null,
+  });
+
+  const handleForecastUpdate = (data: ForecastAqiOutput) => {
+    setMapData({
+      center: { lat: data.lat, lng: data.lon },
+      aqi: data.current.aqi,
+    });
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -13,7 +34,7 @@ export default function Home() {
         <div className="grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           
           <div className="xl:col-span-2 space-y-6">
-            <AqiDashboard />
+            <AqiDashboard onForecastUpdate={handleForecastUpdate} />
             <HistoricalTrends />
           </div>
 
@@ -24,14 +45,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="aspect-video bg-muted rounded-lg overflow-hidden border">
-                  <Image
-                    src="https://placehold.co/600x400"
-                    alt="Map placeholder"
-                    width={600}
-                    height={400}
-                    className="w-full h-full object-cover"
-                    data-ai-hint="world map"
-                  />
+                  <AqiMap center={mapData.center} zoom={10} aqi={mapData.aqi} />
                 </div>
               </CardContent>
             </Card>
