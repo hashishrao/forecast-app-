@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { APIProvider, Map, useMap } from "@vis.gl/react-google-maps";
 
 type PollutionSourceMapProps = {
@@ -36,66 +36,61 @@ const heatmapData: HeatmapPoint[] = [
 
 const HeatmapLayer = ({ showVehicleDensity, showIndustrialZones }: { showVehicleDensity: boolean; showIndustrialZones: boolean }) => {
   const map = useMap();
-  const heatmapRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
+  const [heatmap, setHeatmap] = useState<google.maps.visualization.HeatmapLayer | null>(null);
 
+  // Effect for creating and destroying the heatmap instance
   useEffect(() => {
-    if (!map) {
-      return;
-    }
+    if (!map) return;
 
-    // Always clear the previous heatmap before drawing a new one
-    if (heatmapRef.current) {
-      heatmapRef.current.setMap(null);
-    }
+    let heatmapInstance: google.maps.visualization.HeatmapLayer;
+
+    // Asynchronously load the visualization library and create the heatmap
+    const initHeatmap = async () => {
+        const { HeatmapLayer } = (await google.maps.importLibrary(
+            "visualization"
+        )) as google.maps.visualization.VisualizationLibrary;
+
+        heatmapInstance = new HeatmapLayer({ map });
+        heatmapInstance.set("radius", 40);
+        heatmapInstance.set("opacity", 0.8);
+        heatmapInstance.set("gradient", [
+            "rgba(102, 255, 0, 0)",
+            "rgba(147, 255, 0, 1)",
+            "rgba(238, 255, 0, 1)",
+            "rgba(255, 170, 0, 1)",
+            "rgba(255, 0, 0, 1)",
+        ]);
+        setHeatmap(heatmapInstance);
+    };
     
+    initHeatmap();
+
+    // Cleanup function to remove the heatmap from the map when the component unmounts
+    return () => {
+      if (heatmapInstance) {
+        heatmapInstance.setMap(null);
+      }
+    };
+  }, [map]);
+
+  // Effect for updating the heatmap data based on props
+  useEffect(() => {
+    if (!heatmap) return;
+
     const filteredData = heatmapData.filter(p => {
       if (p.type === 'traffic' && showVehicleDensity) return true;
       if (p.type === 'industrial' && showIndustrialZones) return true;
       return false;
     });
+
+    const weightedPoints = filteredData.map((p) => ({
+      location: new google.maps.LatLng(p.lat, p.lng),
+      weight: p.weight,
+    }));
     
-    // If there's no data to show, don't create a new heatmap instance
-    if (filteredData.length === 0) {
-        return;
-    }
+    heatmap.setData(weightedPoints);
 
-    const loadHeatmap = async () => {
-      const { HeatmapLayer } = (await google.maps.importLibrary(
-        "visualization"
-      )) as google.maps.visualization.VisualizationLibrary;
-
-      const weightedPoints = filteredData.map((p) => ({
-        location: new google.maps.LatLng(p.lat, p.lng),
-        weight: p.weight,
-      }));
-      
-      const heatmap = new HeatmapLayer({
-        data: weightedPoints,
-        map: map,
-      });
-
-      heatmap.set("radius", 40);
-      heatmap.set("opacity", 0.8);
-      heatmap.set("gradient", [
-        "rgba(102, 255, 0, 0)",
-        "rgba(147, 255, 0, 1)",
-        "rgba(238, 255, 0, 1)",
-        "rgba(255, 170, 0, 1)",
-        "rgba(255, 0, 0, 1)",
-      ]);
-      
-      heatmapRef.current = heatmap;
-    };
-
-    loadHeatmap();
-
-    // The cleanup will run when dependencies change, ensuring the old heatmap is removed.
-    return () => {
-      if (heatmapRef.current) {
-        heatmapRef.current.setMap(null);
-      }
-    };
-  }, [map, showVehicleDensity, showIndustrialZones]);
+  }, [heatmap, showVehicleDensity, showIndustrialZones]);
 
   return null;
 };
