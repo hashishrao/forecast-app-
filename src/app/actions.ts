@@ -4,6 +4,7 @@ import { forecastAqi, type ForecastAqiInput, type ForecastAqiOutput } from "@/ai
 import { textToSpeech, type TextToSpeechOutput } from "@/ai/flows/text-to-speech";
 import { chat, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { worldAqi, type WorldAqiOutput } from "@/ai/flows/world-aqi";
+import { generateHeatmapData, type GenerateHeatmapDataInput, type GenerateHeatmapDataOutput } from "@/ai/flows/generate-heatmap-data";
 
 type AqiActionResult = {
     success: boolean;
@@ -65,6 +66,23 @@ type WorldAqiActionResult = {
 export async function getWorldAqiAction(): Promise<WorldAqiActionResult> {
     try {
         const result = await worldAqi();
+        return { success: true, data: result };
+    } catch (e) {
+        console.error(e);
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+        return { success: false, error: errorMessage };
+    }
+}
+
+type HeatmapDataActionResult = {
+    success: boolean;
+    data?: GenerateHeatmapDataOutput;
+    error?: string;
+}
+
+export async function getHeatmapDataAction(input: GenerateHeatmapDataInput): Promise<HeatmapDataActionResult> {
+    try {
+        const result = await generateHeatmapData(input);
         return { success: true, data: result };
     } catch (e) {
         console.error(e);

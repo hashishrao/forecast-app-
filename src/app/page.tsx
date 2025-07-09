@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ForecastAqiOutput } from "@/ai/flows/forecast-aqi";
 import AqiMap from "@/components/aqi-map";
 import PollutionSourceMap from "@/components/pollution-source-map";
-import { getAqiForecastAction } from "@/app/actions";
+import { getAqiForecastAction, getHeatmapDataAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import VoiceAssistant, { type VoiceAssistantHandle } from "@/components/voice-assistant";
 import WorldAqiView from "@/components/world-aqi-view";
@@ -25,12 +25,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Car, Warehouse } from "lucide-react";
+import type { GenerateHeatmapDataOutput } from "@/ai/flows/generate-heatmap-data";
 
 
 type MapData = {
   center: { lat: number; lng: number };
   aqi: number | null;
 }
+
+type HeatmapPoint = GenerateHeatmapDataOutput['points'][0];
 
 const getAqiDescription = (aqi: number) => {
   if (aqi <= 50) return "Good";
@@ -51,6 +54,7 @@ export default function Home() {
   const [forecast, setForecast] = useState<string | null>(null);
   const [aqiData, setAqiData] = useState<ForecastAqiOutput['current'] | null>(null);
   const [currentLocation, setCurrentLocation] = useState("New Delhi");
+  const [heatmapData, setHeatmapData] = useState<HeatmapPoint[]>([]);
   const [showVehicleDensity, setShowVehicleDensity] = useState(true);
   const [showIndustrialZones, setShowIndustrialZones] = useState(true);
   const { toast } = useToast();
@@ -69,15 +73,20 @@ export default function Home() {
     setForecast(null);
     setAqiData(null);
     setCurrentLocation(location);
+    setHeatmapData([]);
 
     startTransition(async () => {
-      const result = await getAqiForecastAction({ location });
-      if (result.success && result.data) {
-        setForecast(result.data.forecast);
-        setAqiData(result.data.current);
-        handleForecastUpdate(result.data);
+      const [aqiResult, heatmapResult] = await Promise.all([
+        getAqiForecastAction({ location }),
+        getHeatmapDataAction({ location })
+      ]);
 
-        const { aqi, temp } = result.data.current;
+      if (aqiResult.success && aqiResult.data) {
+        setForecast(aqiResult.data.forecast);
+        setAqiData(aqiResult.data.current);
+        handleForecastUpdate(aqiResult.data);
+
+        const { aqi, temp } = aqiResult.data.current;
         const aqiDesc = getAqiDescription(aqi);
         const summary = `The current AQI in ${location} is ${aqi}, which is ${aqiDesc}. The temperature is ${temp} degrees Celsius.`;
         voiceAssistantRef.current?.speak(summary);
@@ -85,9 +94,15 @@ export default function Home() {
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.error || "Failed to fetch AQI data.",
+          description: aqiResult.error || "Failed to fetch AQI data.",
         });
         voiceAssistantRef.current?.speak(`Sorry, I couldn't get the air quality for ${location}. Please try again.`);
+      }
+
+      if (heatmapResult.success && heatmapResult.data) {
+        setHeatmapData(heatmapResult.data.points);
+      } else {
+        console.error("Failed to fetch heatmap data:", heatmapResult.error);
       }
     });
   };
@@ -178,6 +193,7 @@ export default function Home() {
                       <PollutionSourceMap
                         center={mapData.center}
                         zoom={10}
+                        points={heatmapData}
                         showVehicleDensity={showVehicleDensity}
                         showIndustrialZones={showIndustrialZones}
                       />
