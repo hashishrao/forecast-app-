@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
@@ -12,6 +13,10 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 const trendsData = {
   daily: {
+    aqi: [
+      { label: "Mon", value: 105 }, { label: "Tue", value: 112 }, { label: "Wed", value: 125 }, 
+      { label: "Thu", value: 118 }, { label: "Fri", value: 109 }, { label: "Sat", value: 135 }, { label: "Sun", value: 142 }
+    ],
     pm25: [
       { label: "Mon", value: 42 }, { label: "Tue", value: 48 }, { label: "Wed", value: 55 }, 
       { label: "Thu", value: 51 }, { label: "Fri", value: 47 }, { label: "Sat", value: 58 }, { label: "Sun", value: 62 }
@@ -26,6 +31,9 @@ const trendsData = {
     ],
   },
   weekly: {
+     aqi: [
+      { label: "Week 1", value: 110 }, { label: "Week 2", value: 118 }, { label: "Week 3", value: 115 }, { label: "Week 4", value: 122 }
+    ],
     pm25: [
       { label: "Week 1", value: 45 }, { label: "Week 2", value: 50 }, { label: "Week 3", value: 48 }, { label: "Week 4", value: 52 }
     ],
@@ -37,6 +45,10 @@ const trendsData = {
     ],
   },
   monthly: {
+    aqi: [
+      { label: "Jan", value: 120 }, { label: "Feb", value: 135 }, { label: "Mar", value: 95 }, 
+      { label: "Apr", value: 70 }, { label: "May", value: 85 }, { label: "Jun", value: 100 }
+    ],
     pm25: [
       { label: "Jan", value: 45 }, { label: "Feb", value: 52 }, { label: "Mar", value: 38 }, 
       { label: "Apr", value: 25 }, { label: "May", value: 32 }, { label: "Jun", value: 40 }
@@ -79,8 +91,9 @@ const satelliteImages = {
 };
 
 const chartConfig = {
-  value: {
-    label: "µg/m³",
+  aqi: {
+    label: "AQI",
+    color: "hsl(var(--chart-4))",
   },
   pm25: {
     label: "PM2.5",
@@ -100,8 +113,8 @@ type Pollutant = keyof typeof trendsData.daily;
 type TimePeriod = keyof typeof trendsData;
 
 export default function HistoricalTrends() {
-  const [activeTab, setActiveTab] = useState<Pollutant>('pm25');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('monthly');
+  const [activeTab, setActiveTab] = useState<Pollutant>('aqi');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
 
   const chartData = useMemo(() => {
     return trendsData[timePeriod][activeTab] || [];
@@ -125,15 +138,16 @@ export default function HistoricalTrends() {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <Tabs defaultValue="pm25" onValueChange={(value) => setActiveTab(value as Pollutant)}>
+          <Tabs defaultValue="aqi" onValueChange={(value) => setActiveTab(value as Pollutant)}>
             <TabsList>
+              <TabsTrigger value="aqi">AQI</TabsTrigger>
               <TabsTrigger value="pm25">PM2.5</TabsTrigger>
               <TabsTrigger value="pm10">PM10</TabsTrigger>
               <TabsTrigger value="no2">NO₂</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <RadioGroup defaultValue="monthly" onValueChange={(value) => setTimePeriod(value as TimePeriod)} className="flex items-center gap-4">
+          <RadioGroup defaultValue="daily" onValueChange={(value) => setTimePeriod(value as TimePeriod)} className="flex items-center gap-4">
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="daily" id="daily" />
               <Label htmlFor="daily">Daily</Label>
@@ -153,9 +167,17 @@ export default function HistoricalTrends() {
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="label" tickLine={false} tickMargin={10} axisLine={false} />
-            <YAxis />
-            <Tooltip cursor={false} content={<ChartTooltipContent />} />
-            <Bar dataKey="value" fill={chartConfig[activeTab].color} radius={4} />
+            <YAxis tickFormatter={(value) => activeTab === 'aqi' ? `${value}` : `${value} µg/m³`} />
+            <Tooltip
+              cursor={false}
+              content={<ChartTooltipContent indicator="line" />}
+            />
+            <Bar
+              dataKey="value"
+              name={chartConfig[activeTab].label}
+              fill={chartConfig[activeTab].color}
+              radius={4}
+            />
           </BarChart>
         </ChartContainer>
 
