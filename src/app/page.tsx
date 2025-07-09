@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef } from "react";
+import Link from "next/link";
 import AqiDashboard from "@/components/aqi-dashboard";
 import ChatAssistant from "@/components/chat-assistant";
 import HistoricalTrends from "@/components/historical-trends";
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Car, Warehouse } from "lucide-react";
+import { Car, Warehouse, Hospital } from "lucide-react";
 import type { GenerateHeatmapDataOutput } from "@/ai/flows/generate-heatmap-data";
 
 
@@ -116,10 +117,16 @@ export default function Home() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <CardTitle className="p-4">Map Layers</CardTitle>
+          <CardTitle className="p-4">BreatheEasy</CardTitle>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <Link href="/emergency" className="flex items-center w-full gap-2 p-2 cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md">
+                <Hospital className="h-5 w-5" />
+                Emergency
+              </Link>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <div className="flex items-center justify-between p-2">
                 <Label
