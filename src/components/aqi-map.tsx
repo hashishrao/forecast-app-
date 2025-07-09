@@ -36,12 +36,10 @@ export default function AqiMap({ center, zoom, aqi }: AqiMapProps) {
       <Map
         mapId="breathe-easy-map"
         style={{ width: '100%', height: '100%' }}
-        defaultCenter={center}
-        defaultZoom={zoom}
         center={center}
         zoom={zoom}
         gestureHandling={'greedy'}
-        disableDefaultUI={true}
+        disableDefaultUI={false}
       >
         {aqi !== null && (
           <AdvancedMarker position={center}>
