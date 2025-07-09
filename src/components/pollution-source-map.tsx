@@ -51,13 +51,17 @@ const HeatmapLayer = ({ showVehicleDensity, showIndustrialZones }: { showVehicle
         )) as google.maps.visualization.VisualizationLibrary;
 
         heatmapInstance = new HeatmapLayer({ map });
-        heatmapInstance.set("radius", 40);
-        heatmapInstance.set("opacity", 0.8);
+        // Increase the radius for a larger heatmap effect
+        heatmapInstance.set("radius", 50);
+        // Adjust opacity to make the underlying map more visible
+        heatmapInstance.set("opacity", 0.7);
+        // Set a custom color gradient from cool to hot
         heatmapInstance.set("gradient", [
-            "rgba(102, 255, 0, 0)",
-            "rgba(147, 255, 0, 1)",
-            "rgba(238, 255, 0, 1)",
-            "rgba(255, 170, 0, 1)",
+            "rgba(0, 255, 255, 0)",
+            "rgba(0, 255, 255, 1)",
+            "rgba(0, 127, 255, 1)",
+            "rgba(255, 255, 0, 1)",
+            "rgba(255, 140, 0, 1)",
             "rgba(255, 0, 0, 1)",
         ]);
         setHeatmap(heatmapInstance);
@@ -118,7 +122,7 @@ export default function PollutionSourceMap({ center, zoom, showVehicleDensity, s
         center={center}
         zoom={zoom}
         gestureHandling={'greedy'}
-        disableDefaultUI={true}
+        disableDefaultUI={false}
         mapTypeId={'satellite'}
       >
         <HeatmapLayer showVehicleDensity={showVehicleDensity} showIndustrialZones={showIndustrialZones}/>
