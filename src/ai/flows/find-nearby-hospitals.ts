@@ -22,7 +22,7 @@ const HospitalSchema = z.object({
     lat: z.number().describe("The latitude of the hospital."),
     lon: z.number().describe("The longitude of the hospital."),
     distance: z.string().describe("The approximate distance from the user's location, e.g., '5.2 km'."),
-    imageUrl: z.string().url().describe("A placeholder image URL for the hospital, e.g., 'https://placehold.co/600x400.png'.")
+    imageUrl: z.string().describe("A placeholder image URL for the hospital, e.g., 'https://placehold.co/600x400.png'.")
 });
 
 const FindNearbyHospitalsOutputSchema = z.object({
