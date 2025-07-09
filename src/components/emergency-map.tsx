@@ -3,6 +3,7 @@
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { Hospital, UserCircle } from "lucide-react";
 import type { FindNearbyHospitalsOutput } from "@/ai/flows/find-nearby-hospitals";
+import { cn } from "@/lib/utils";
 
 type HospitalData = FindNearbyHospitalsOutput['hospitals'][0];
 
@@ -10,9 +11,12 @@ type EmergencyMapProps = {
   center: { lat: number; lng: number };
   zoom: number;
   hospitals: HospitalData[];
+  selectedHospital: HospitalData | null;
+  onMarkerClick: (hospital: HospitalData) => void;
+  userLocation: { lat: number; lng: number };
 };
 
-export default function EmergencyMap({ center, zoom, hospitals }: EmergencyMapProps) {
+export default function EmergencyMap({ center, zoom, hospitals, selectedHospital, onMarkerClick, userLocation }: EmergencyMapProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
@@ -30,12 +34,13 @@ export default function EmergencyMap({ center, zoom, hospitals }: EmergencyMapPr
       <Map
         mapId="breathe-easy-emergency-map"
         style={{ width: '100%', height: '100%' }}
-        defaultCenter={center}
-        defaultZoom={zoom}
+        center={center}
+        zoom={zoom}
         gestureHandling={'greedy'}
         disableDefaultUI={false}
+        key={`${center.lat}-${center.lng}-${zoom}`} // Force re-render on center/zoom change
       >
-        <AdvancedMarker position={center} title="Your Location">
+        <AdvancedMarker position={userLocation} title="Your Location">
             <UserCircle className="w-8 h-8 text-blue-600 fill-blue-200" />
         </AdvancedMarker>
 
@@ -44,8 +49,12 @@ export default function EmergencyMap({ center, zoom, hospitals }: EmergencyMapPr
             key={hospital.name}
             position={{ lat: hospital.lat, lng: hospital.lon }}
             title={`${hospital.name}\n${hospital.address}`}
+            onClick={() => onMarkerClick(hospital)}
           >
-            <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg">
+            <div className={cn(
+              "w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg transition-transform",
+              selectedHospital?.name === hospital.name && "transform scale-125 bg-red-700 ring-2 ring-white"
+            )}>
               <Hospital className="w-5 h-5" />
             </div>
           </AdvancedMarker>
