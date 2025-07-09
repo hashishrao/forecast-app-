@@ -1,6 +1,7 @@
 "use client";
 
-import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { useEffect } from "react";
+import { APIProvider, Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
 import { Hospital, UserCircle } from "lucide-react";
 import type { FindNearbyHospitalsOutput } from "@/ai/flows/find-nearby-hospitals";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,18 @@ type EmergencyMapProps = {
   selectedHospital: HospitalData | null;
   onMarkerClick: (hospital: HospitalData) => void;
   userLocation: { lat: number; lng: number };
+};
+
+// This component will control the map's center and zoom imperatively
+const MapController = ({ center, zoom }: { center: { lat: number; lng: number }; zoom: number }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (map) {
+            map.panTo(center);
+            map.setZoom(zoom);
+        }
+    }, [map, center, zoom]);
+    return null;
 };
 
 export default function EmergencyMap({ center, zoom, hospitals, selectedHospital, onMarkerClick, userLocation }: EmergencyMapProps) {
@@ -34,12 +47,13 @@ export default function EmergencyMap({ center, zoom, hospitals, selectedHospital
       <Map
         mapId="breathe-easy-emergency-map"
         style={{ width: '100%', height: '100%' }}
-        center={center}
-        zoom={zoom}
+        defaultCenter={center}
+        defaultZoom={zoom}
         gestureHandling={'greedy'}
         disableDefaultUI={false}
-        key={`${center.lat}-${center.lng}-${zoom}`} // Force re-render on center/zoom change
       >
+        <MapController center={center} zoom={zoom} />
+        
         <AdvancedMarker position={userLocation} title="Your Location">
             <UserCircle className="w-8 h-8 text-blue-600 fill-blue-200" />
         </AdvancedMarker>
