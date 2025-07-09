@@ -7,13 +7,18 @@ import SchoolZoneMap from '@/components/school-zone-map';
 import { getNearbySchoolsAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { School as SchoolIcon, MapPin, Navigation } from 'lucide-react';
+import { School as SchoolIcon, MapPin, Navigation, BellRing } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { FindNearbySchoolsOutput } from "@/ai/flows/find-nearby-schools";
 import { Logo } from '@/components/icons/logo';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type School = FindNearbySchoolsOutput['schools'][0];
 
@@ -24,6 +29,15 @@ const getAqiColorClass = (aqi: number) => {
     if (aqi <= 200) return "text-red-600";
     if (aqi <= 300) return "text-purple-700";
     return "text-rose-700";
+};
+
+const getAqiBgColorClass = (aqi: number) => {
+    if (aqi <= 50) return "bg-green-500";
+    if (aqi <= 100) return "bg-yellow-500";
+    if (aqi <= 150) return "bg-orange-500";
+    if (aqi <= 200) return "bg-red-500";
+    if (aqi <= 300) return "bg-purple-600";
+    return "bg-rose-600";
 };
 
 const getAqiDescription = (aqi: number) => {
@@ -41,6 +55,12 @@ export default function SchoolZonePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
     const { toast } = useToast();
+
+    // State for notification settings
+    const [selectedSchoolForAlert, setSelectedSchoolForAlert] = useState<string>('');
+    const [aqiThreshold, setAqiThreshold] = useState<number[]>([150]);
+    const [alertEmail, setAlertEmail] = useState<string>('');
+
 
     useEffect(() => {
         if ("geolocation" in navigator) {
@@ -100,6 +120,35 @@ export default function SchoolZonePage() {
         return selectedSchool ? 15 : 14; // A bit more zoomed out by default
     }, [selectedSchool]);
 
+    const handleSubscribe = () => {
+        if (!selectedSchoolForAlert || !alertEmail) {
+            toast({
+                variant: "destructive",
+                title: "Missing Information",
+                description: "Please select a school and enter an email address.",
+            });
+            return;
+        }
+        if (!/\S+@\S+\.\S+/.test(alertEmail)) {
+            toast({
+                variant: "destructive",
+                title: "Invalid Email",
+                description: "Please enter a valid email address.",
+            });
+            return;
+        }
+
+        toast({
+            title: "Subscribed!",
+            description: `You will be notified at ${alertEmail} when the AQI at ${selectedSchoolForAlert} exceeds ${aqiThreshold[0]}.`,
+        });
+        
+        // Reset form
+        setSelectedSchoolForAlert('');
+        setAqiThreshold([150]);
+        setAlertEmail('');
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-background">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -144,8 +193,8 @@ export default function SchoolZonePage() {
                         </Card>
                     </div>
 
-                    <div className="flex flex-col h-[calc(100vh-10rem)]">
-                         <Card className="flex-1 flex flex-col">
+                    <div className="space-y-6">
+                         <Card className="max-h-[50vh] flex flex-col">
                             <CardHeader>
                                 <CardTitle>Nearby Schools</CardTitle>
                                 <CardDescription>Click a school to view it on the map.</CardDescription>
@@ -219,6 +268,62 @@ export default function SchoolZonePage() {
                                         )}
                                     </div>
                                 </ScrollArea>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BellRing className="text-primary"/>
+                                    Parent Notification Settings
+                                </CardTitle>
+                                <CardDescription>
+                                    Set an AQI threshold to receive alerts for a specific school.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="school-select">School</Label>
+                                    <Select value={selectedSchoolForAlert} onValueChange={setSelectedSchoolForAlert} disabled={schools.length === 0 || isLoading}>
+                                        <SelectTrigger id="school-select">
+                                            <SelectValue placeholder="Select a school" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {schools.map(school => (
+                                                <SelectItem key={school.name} value={school.name}>{school.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-3">
+                                    <Label htmlFor="aqi-threshold" className="block">Alert me when AQI exceeds: <span className="font-bold">{aqiThreshold[0]}</span></Label>
+                                    <div className="flex items-center gap-4">
+                                        <Slider
+                                            id="aqi-threshold"
+                                            min={0}
+                                            max={500}
+                                            step={10}
+                                            value={aqiThreshold}
+                                            onValueChange={setAqiThreshold}
+                                            className="flex-1"
+                                        />
+                                        <span className={cn("p-1.5 rounded-md text-white text-xs font-medium w-36 text-center", getAqiBgColorClass(aqiThreshold[0]))}>
+                                            {getAqiDescription(aqiThreshold[0])}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email-input">Email Address</Label>
+                                    <Input 
+                                        id="email-input" 
+                                        type="email" 
+                                        placeholder="your.email@example.com"
+                                        value={alertEmail}
+                                        onChange={(e) => setAlertEmail(e.target.value)}
+                                    />
+                                </div>
+                                <Button onClick={handleSubscribe} className="w-full">
+                                    Subscribe to Alerts
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>
