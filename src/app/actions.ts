@@ -6,6 +6,7 @@ import { chat, type ChatInput, type ChatOutput } from "@/ai/flows/chat-flow";
 import { worldAqi, type WorldAqiOutput } from "@/ai/flows/world-aqi";
 import { generateHeatmapData, type GenerateHeatmapDataInput, type GenerateHeatmapDataOutput } from "@/ai/flows/generate-heatmap-data";
 import { findNearbyHospitals, type FindNearbyHospitalsInput, type FindNearbyHospitalsOutput } from "@/ai/flows/find-nearby-hospitals";
+import { findNearbySchools, type FindNearbySchoolsInput, type FindNearbySchoolsOutput } from "@/ai/flows/find-nearby-schools";
 
 type AqiActionResult = {
     success: boolean;
@@ -101,6 +102,23 @@ type HospitalsActionResult = {
 export async function getNearbyHospitalsAction(input: FindNearbyHospitalsInput): Promise<HospitalsActionResult> {
     try {
         const result = await findNearbyHospitals(input);
+        return { success: true, data: result };
+    } catch (e) {
+        console.error(e);
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+        return { success: false, error: errorMessage };
+    }
+}
+
+type SchoolsActionResult = {
+    success: boolean;
+    data?: FindNearbySchoolsOutput;
+    error?: string;
+}
+
+export async function getNearbySchoolsAction(input: FindNearbySchoolsInput): Promise<SchoolsActionResult> {
+    try {
+        const result = await findNearbySchools(input);
         return { success: true, data: result };
     } catch (e) {
         console.error(e);

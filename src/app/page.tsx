@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Car, Warehouse, Hospital } from "lucide-react";
+import { Car, Warehouse, Hospital, School } from "lucide-react";
 import type { GenerateHeatmapDataOutput } from "@/ai/flows/generate-heatmap-data";
 
 
@@ -125,6 +125,12 @@ export default function Home() {
               <Link href="/emergency" className="flex items-center w-full gap-2 p-2 cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md">
                 <Hospital className="h-5 w-5" />
                 Emergency
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Link href="/school-zone" className="flex items-center w-full gap-2 p-2 cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md">
+                <School className="h-5 w-5" />
+                School Zone
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
