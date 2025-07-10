@@ -2,7 +2,7 @@
 
 > **"Your Air. Your Health. Your Control."**
 
-![BreatheEasy Banner](https://postimg.cc/w3cbXv4b) <!-- Replace with actual image if needed -->
+![BreatheEasy Banner](https://postimg.cc/w3cbXv4b)
 
 ---
 
